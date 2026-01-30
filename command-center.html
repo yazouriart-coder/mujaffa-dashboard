@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mujaffa Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-up { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+        .status-down { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+        .status-warn { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 p-4">
+        <div class="container mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="text-2xl">🎯</div>
+                <div>
+                    <h1 class="text-xl font-bold">Mujaffa Command Center</h1>
+                    <p class="text-gray-400 text-sm">Samlet overblik over alle dine systemer</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div id="clock" class="text-lg font-mono"></div>
+                <div class="text-gray-400 text-sm">Sidst opdateret: <span id="last-update">Lige nu</span></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 space-y-4">
+        <!-- Status Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Trading Bot -->
+            <div class="glass rounded-xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-400"><i class="fas fa-robot mr-2"></i>Trading Bot</span>
+                    <span class="status-dot status-up" id="trading-status"></span>
+                </div>
+                <div class="text-2xl font-bold text-green-400">+90.2%</div>
+                <div class="text-sm text-gray-400">$10,000 → $19,019</div>
+                <div class="text-xs text-gray-500 mt-1">71% win rate | Paper trading</div>
+            </div>
+
+            <!-- Websites -->
+            <div class="glass rounded-xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-400"><i class="fas fa-globe mr-2"></i>Websites</span>
+                    <span class="status-dot status-up"></span>
+                </div>
+                <div class="text-2xl font-bold">3/3</div>
+                <div class="text-sm text-gray-400">Alle oppe</div>
+                <div class="text-xs text-gray-500 mt-1">Tjek hver 2. time</div>
+            </div>
+
+            <!-- Monitors -->
+            <div class="glass rounded-xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-400"><i class="fas fa-eye mr-2"></i>Overvågning</span>
+                    <span class="status-dot status-up"></span>
+                </div>
+                <div class="text-2xl font-bold">9</div>
+                <div class="text-sm text-gray-400">Konkurrenter</div>
+                <div class="text-xs text-gray-500 mt-1">Analyse mandag 09:00</div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="glass rounded-xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-400"><i class="fas fa-bell mr-2"></i>Alerts</span>
+                    <span class="status-dot status-up"></span>
+                </div>
+                <div class="text-2xl font-bold text-green-400">0</div>
+                <div class="text-sm text-gray-400">Aktive alarmer</div>
+                <div class="text-xs text-gray-500 mt-1">Alt OK</div>
+            </div>
+        </div>
+
+        <!-- Websites Status -->
+        <div class="glass rounded-xl p-4">
+            <h2 class="text-lg font-bold mb-4"><i class="fas fa-server mr-2"></i>Website Status</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
+                    <div>
+                        <div class="font-semibold">🦒 MLflyt</div>
+                        <div class="text-xs text-gray-400">mlflyt.dk</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="status-dot status-up"></span>
+                        <div class="text-xs text-green-400">0.42s</div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
+                    <div>
+                        <div class="font-semibold">♻️ AK Affaldsservice</div>
+                        <div class="text-xs text-gray-400">akaffaldsservice.dk</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="status-dot status-up"></span>
+                        <div class="text-xs text-green-400">0.19s</div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-3 flex items-center justify-between opacity-50">
+                    <div>
+                        <div class="font-semibold">🌿 Sacred Shop</div>
+                        <div class="text-xs text-gray-400">sacred-shop.com (pending)</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="status-dot status-warn"></span>
+                        <div class="text-xs text-yellow-400">Venter på DK</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trading Bot -->
+        <div class="glass rounded-xl p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold"><i class="fas fa-chart-line mr-2"></i>Trading Bot Performance</h2>
+                <span class="bg-green-900 text-green-400 px-2 py-1 rounded text-xs">Paper Trading</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-gray-800 rounded-lg p-3">
+                    <div class="text-gray-400 text-sm">Total Return</div>
+                    <div class="text-2xl font-bold text-green-400">+90.2%</div>
+                    <div class="text-xs text-gray-500">$10K → $19K</div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-3">
+                    <div class="text-gray-400 text-sm">Win Rate</div>
+                    <div class="text-2xl font-bold">71%</div>
+                    <div class="text-xs text-gray-500">22 wins / 9 losses</div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-3">
+                    <div class="text-gray-400 text-sm">Total Trades</div>
+                    <div class="text-2xl font-bold">31</div>
+                    <div class="text-xs text-gray-500">3 dages periode</div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-3">
+                    <div class="text-gray-400 text-sm">Status</div>
+                    <div class="text-2xl font-bold text-green-400">Running</div>
+                    <div class="text-xs text-gray-500">Screen: tradingbot</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Competitors -->
+        <div class="glass rounded-xl p-4">
+            <h2 class="text-lg font-bold mb-4"><i class="fas fa-users mr-2"></i>Konkurrent Overvågning</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-400 mb-2">🦒 MLflyt Konkurrenter</h3>
+                    <div class="space-y-2">
+                        <div class="bg-gray-800 rounded p-2 flex justify-between items-center">
+                            <span>Holger Danske</span>
+                            <span class="text-xs bg-blue-900 text-blue-400 px-2 py-1 rounded">Høj prioritet</span>
+                        </div>
+                        <div class="bg-gray-800 rounded p-2 flex justify-between items-center">
+                            <span>Aarhus Flytteservice</span>
+                            <span class="text-xs bg-blue-900 text-blue-400 px-2 py-1 rounded">Høj prioritet</span>
+                        </div>
+                        <div class="bg-gray-800 rounded p-2 flex justify-between items-center">
+                            <span>AKL Flyt</span>
+                            <span class="text-xs bg-gray-700 text-gray-400 px-2 py-1 rounded">Medium</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-400 mb-2">♻️ AK Affald Konkurrenter</h3>
+                    <div class="space-y-2">
+                        <div class="bg-gray-800 rounded p-2 flex justify-between items-center">
+                            <span>Junkbusters</span>
+                            <span class="text-xs bg-blue-900 text-blue-400 px-2 py-1 rounded">Høj prioritet</span>
+                        </div>
+                        <div class="bg-gray-800 rounded p-2 flex justify-between items-center">
+                            <span>Skraldebilen</span>
+                            <span class="text-xs bg-blue-900 text-blue-400 px-2 py-1 rounded">Høj prioritet</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 text-center text-sm text-gray-400">
+                Næste analyse: <span class="text-white">Mandag 09:00</span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="glass rounded-xl p-4">
+            <h2 class="text-lg font-bold mb-4"><i class="fas fa-bolt mr-2"></i>Hurtige Handlinger</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <a href="http://localhost:5678" target="_blank" class="bg-blue-600 hover:bg-blue-700 rounded-lg p-3 text-center transition">
+                    <i class="fas fa-project-diagram text-2xl mb-2"></i>
+                    <div class="text-sm">n8n Workflows</div>
+                </a>
+                <button onclick="alert('Skriv tjek konkurrenter i chat for at køre nu')" class="bg-purple-600 hover:bg-purple-700 rounded-lg p-3 text-center transition">
+                    <i class="fas fa-search text-2xl mb-2"></i>
+                    <div class="text-sm">Tjek Konkurrenter</div>
+                </button>
+                <button onclick="alert('Landing page tjek kører automatisk hver 2. time')" class="bg-green-600 hover:bg-green-700 rounded-lg p-3 text-center transition">
+                    <i class="fas fa-heartbeat text-2xl mb-2"></i>
+                    <div class="text-sm">Site Status</div>
+                </button>
+                <a href="https://app.netlify.com" target="_blank" class="bg-orange-600 hover:bg-orange-700 rounded-lg p-3 text-center transition">
+                    <i class="fas fa-cloud text-2xl mb-2"></i>
+                    <div class="text-sm">Netlify</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="glass rounded-xl p-4">
+            <h2 class="text-lg font-bold mb-4"><i class="fas fa-history mr-2"></i>Seneste Aktivitet</h2>
+            <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-3 p-2 bg-gray-800 rounded">
+                    <span class="text-green-400">✓</span>
+                    <span>Landing page monitor aktiveret for MLflyt + AK Affald</span>
+                    <span class="text-gray-500 ml-auto">13:00</span>
+                </div>
+                <div class="flex items-center gap-3 p-2 bg-gray-800 rounded">
+                    <span class="text-green-400">✓</span>
+                    <span>Konkurrent overvågning sat op (9 konkurrenter)</span>
+                    <span class="text-gray-500 ml-auto">13:11</span>
+                </div>
+                <div class="flex items-center gap-3 p-2 bg-gray-800 rounded">
+                    <span class="text-green-400">✓</span>
+                    <span>Konkurrent analyse kørt – begge sider ser gode ud</span>
+                    <span class="text-gray-500 ml-auto">13:14</span>
+                </div>
+                <div class="flex items-center gap-3 p-2 bg-gray-800 rounded">
+                    <span class="text-blue-400">🤖</span>
+                    <span>Trading bot: +90.2% (71% win rate)</span>
+                    <span class="text-gray-500 ml-auto">Running</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleTimeString('da-DK');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Auto-refresh every 5 minutes
+        setInterval(() => {
+            location.reload();
+        }, 300000);
+    </script>
+</body>
+</html>
