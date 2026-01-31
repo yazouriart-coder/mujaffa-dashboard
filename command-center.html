@@ -6,242 +6,811 @@
     <title>Mujaffa Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a25;
+            --bg-hover: #252535;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+        }
+        body {
+            background: var(--bg-primary);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
         .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+        }
+        .glass-hover:hover {
+            background: var(--bg-hover);
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px -10px rgba(99, 102, 241, 0.2);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             display: inline-block;
+            position: relative;
         }
-        .status-up { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
-        .status-down { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
-        .status-warn { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+        .status-dot::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .status-up { background: var(--accent-success); box-shadow: 0 0 12px var(--accent-success); }
+        .status-up::after { border: 1px solid var(--accent-success); }
+        .status-down { background: var(--accent-danger); box-shadow: 0 0 12px var(--accent-danger); }
+        .status-down::after { border: 1px solid var(--accent-danger); }
+        .status-warn { background: var(--accent-warning); box-shadow: 0 0 12px var(--accent-warning); }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0; }
+        }
+        .tab-btn {
+            position: relative;
+            padding: 12px 20px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+        .tab-btn:hover { color: #f8fafc; background: var(--bg-hover); }
+        .tab-btn.active {
+            color: #f8fafc;
+            background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.1));
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 20%;
+            right: 20%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+        }
+        .metric-card {
+            background: linear-gradient(145deg, var(--bg-card) 0%, rgba(99,102,241,0.05) 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -15px rgba(99,102,241,0.3);
+            border-color: rgba(99,102,241,0.3);
+        }
+        .action-btn {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-hover) 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(99,102,241,0.4);
+            border-color: var(--accent-primary);
+        }
+        .trade-row { transition: all 0.2s ease; }
+        .trade-row:hover { background: var(--bg-hover) !important; transform: translateX(4px); }
+        .website-card {
+            background: linear-gradient(145deg, var(--bg-card), rgba(99,102,241,0.03));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .website-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -15px rgba(99,102,241,0.25);
+        }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .priority-high { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
+        .priority-medium { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: #fbbf24; }
+        .priority-low { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+        .priority-pending { background: rgba(148,163,184,0.15); border: 1px solid rgba(148,163,184,0.3); color: #94a3b8; }
     </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
+<body class="antialiased">
     <!-- Header -->
-    <header class="bg-gray-800 border-b border-gray-700 p-4">
-        <div class="container mx-auto flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="text-2xl">🎯</div>
-                <div>
-                    <h1 class="text-xl font-bold">Mujaffa Command Center</h1>
-                    <p class="text-gray-400 text-sm">Samlet overblik over alle dine systemer</p>
+    <header class="glass sticky top-0 z-50 border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl shadow-lg shadow-indigo-500/30">🎯</div>
+                    <div>
+                        <h1 class="font-bold text-lg tracking-tight">Mujaffa <span class="gradient-text">Command Center</span></h1>
+                        <p class="text-xs text-gray-400">Samlet overblik over alle systemer</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div class="hidden md:flex items-center gap-2 text-sm text-gray-400">
+                        <i class="fas fa-sync-alt text-xs" style="animation: spin 3s linear infinite;"></i>
+                        <span>Sidst opdateret: <span id="last-update" class="text-gray-300">Lige nu</span></span>
+                    </div>
+                    <div class="text-right">
+                        <div id="clock" class="text-xl font-bold font-mono tracking-tight"></div>
+                        <div id="date" class="text-xs text-gray-400"></div>
+                    </div>
                 </div>
             </div>
-            <div class="text-right">
-                <div id="clock" class="text-lg font-mono"></div>
-                <div class="text-gray-400 text-sm">Sidst opdateret: <span id="last-update">Lige nu</span></div>
-            </div>
+            <nav class="flex items-center gap-1 overflow-x-auto pb-1" style="scrollbar-width: none;">
+                <button class="tab-btn active" onclick="switchTab('dashboard')"><i class="fas fa-th-large mr-2"></i>Dashboard</button>
+                <button class="tab-btn" onclick="switchTab('trading')"><i class="fas fa-chart-line mr-2"></i>Trading</button>
+                <button class="tab-btn" onclick="switchTab('websites')"><i class="fas fa-globe mr-2"></i>Websites</button>
+                <button class="tab-btn" onclick="switchTab('competitors')"><i class="fas fa-crosshairs mr-2"></i>Konkurrenter</button>
+                <button class="tab-btn" onclick="switchTab('activity')"><i class="fas fa-history mr-2"></i>Aktivitet</button>
+                <button class="tab-btn" onclick="switchTab('tools')"><i class="fas fa-toolbox mr-2"></i>Værktøjer</button>
+            </nav>
         </div>
     </header>
 
-    <main class="container mx-auto p-4 space-y-4">
-        <!-- Status Overview -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <!-- Trading Bot -->
-            <div class="glass rounded-xl p-4">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-gray-400"><i class="fas fa-robot mr-2"></i>Trading Bot</span>
-                    <span class="status-dot status-up" id="trading-status"></span>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- ==================== DASHBOARD TAB ==================== -->
+        <div id="tab-dashboard" class="tab-content active space-y-6">
+            <!-- Key Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="metric-card p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-gray-400"><i class="fas fa-robot"></i><span class="text-sm">Trading Bot</span></div>
+                        <span class="status-dot status-up"></span>
+                    </div>
+                    <div class="text-3xl font-bold text-emerald-400 mb-1">+90.2%</div>
+                    <div class="text-sm text-gray-400">$10,000 → $19,019</div>
+                    <div class="mt-3 flex items-center gap-2">
+                        <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">74.1% win rate</span>
+                        <span class="text-xs text-gray-500">Paper trading</span>
+                    </div>
                 </div>
-                <div class="text-2xl font-bold text-green-400">+90.2%</div>
-                <div class="text-sm text-gray-400">$10,000 → $19,019</div>
-                <div class="text-xs text-gray-500 mt-1">71% win rate | Paper trading</div>
+                <div class="metric-card p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-gray-400"><i class="fas fa-globe"></i><span class="text-sm">Websites</span></div>
+                        <span class="status-dot status-up"></span>
+                    </div>
+                    <div class="text-3xl font-bold mb-1">2/2</div>
+                    <div class="text-sm text-gray-400">Alle systemer oppe</div>
+                    <div class="mt-3 flex items-center gap-2">
+                        <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">0.42s avg</span>
+                        <span class="text-xs text-gray-500">Tjek hver 2. time</span>
+                    </div>
+                </div>
+                <div class="metric-card p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-gray-400"><i class="fas fa-eye"></i><span class="text-sm">Overvågning</span></div>
+                        <span class="status-dot status-up"></span>
+                    </div>
+                    <div class="text-3xl font-bold mb-1">9</div>
+                    <div class="text-sm text-gray-400">Konkurrenter trackes</div>
+                    <div class="mt-3 flex items-center gap-2">
+                        <span class="text-xs bg-indigo-500/10 text-indigo-400 px-2 py-1 rounded-full">Næste analyse</span>
+                        <span class="text-xs text-gray-500 font-mono" id="dashboard-countdown">--:--:--</span>
+                    </div>
+                </div>
+                <div class="metric-card p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2 text-gray-400"><i class="fas fa-bell"></i><span class="text-sm">Alerts</span></div>
+                        <span class="status-dot status-up"></span>
+                    </div>
+                    <div class="text-3xl font-bold text-emerald-400 mb-1">0</div>
+                    <div class="text-sm text-gray-400">Aktive alarmer</div>
+                    <div class="mt-3 flex items-center gap-2">
+                        <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">Alt OK</span>
+                        <span class="text-xs text-gray-500">Ingen handlinger</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Websites -->
-            <div class="glass rounded-xl p-4">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-gray-400"><i class="fas fa-globe mr-2"></i>Websites</span>
-                    <span class="status-dot status-up"></span>
+            <!-- Dashboard Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Trading Chart -->
+                <div class="glass rounded-2xl p-5 lg:col-span-2">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold flex items-center gap-2"><i class="fas fa-chart-area text-indigo-400"></i>Trading Performance</h3>
+                        <button onclick="switchTab('trading')" class="text-xs text-indigo-400 hover:text-indigo-300 transition">Se detaljer <i class="fas fa-arrow-right ml-1"></i></button>
+                    </div>
+                    <div style="height: 250px;"><canvas id="miniChart"></canvas></div>
                 </div>
-                <div class="text-2xl font-bold">3/3</div>
-                <div class="text-sm text-gray-400">Alle oppe</div>
-                <div class="text-xs text-gray-500 mt-1">Tjek hver 2. time</div>
+                <!-- Website Quick Status -->
+                <div class="glass rounded-2xl p-5">
+                    <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-server text-emerald-400"></i>Website Status</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <span class="text-xl">🦒</span>
+                                <div><div class="font-medium">MLflyt</div><div class="text-xs text-gray-400">mlflyt.dk</div></div>
+                            </div>
+                            <div class="text-right"><span class="status-dot status-up"></span><div class="text-xs text-emerald-400 mt-1">0.42s</div></div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <span class="text-xl">♻️</span>
+                                <div><div class="font-medium">AK Affald</div><div class="text-xs text-gray-400">akaffaldsservice.dk</div></div>
+                            </div>
+                            <div class="text-right"><span class="status-dot status-up"></span><div class="text-xs text-emerald-400 mt-1">0.19s</div></div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl opacity-60">
+                            <div class="flex items-center gap-3">
+                                <span class="text-xl">🌿</span>
+                                <div><div class="font-medium">Sacred Shop</div><div class="text-xs text-gray-400">sacred-shop.com</div></div>
+                            </div>
+                            <div class="text-right"><span class="status-dot status-warn"></span><div class="text-xs text-amber-400 mt-1">Pending</div></div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Monitors -->
-            <div class="glass rounded-xl p-4">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-gray-400"><i class="fas fa-eye mr-2"></i>Overvågning</span>
-                    <span class="status-dot status-up"></span>
+            <!-- Recent Trades & Quick Actions -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass rounded-2xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold flex items-center gap-2"><i class="fas fa-list text-indigo-400"></i>Seneste Handler</h3>
+                        <span class="text-xs text-gray-400">Sidste 10</span>
+                    </div>
+                    <div class="space-y-2" id="dashboard-trades">
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                            <div class="flex items-center gap-2"><span>🟢</span><span class="font-medium">BTCUSDT</span><span class="text-gray-400 text-xs">SHORT</span></div>
+                            <div class="text-right"><span class="text-emerald-400 font-mono">$+760.79</span><span class="text-xs text-gray-500 ml-1">(+2.3%)</span></div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                            <div class="flex items-center gap-2"><span>🔴</span><span class="font-medium">PAXGUSDT</span><span class="text-gray-400 text-xs">SHORT</span></div>
+                            <div class="text-right"><span class="text-red-400 font-mono">$-380.39</span><span class="text-xs text-gray-500 ml-1">(-2.9%)</span></div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                            <div class="flex items-center gap-2"><span>🔴</span><span class="font-medium">PAXGUSDT</span><span class="text-gray-400 text-xs">LONG</span></div>
+                            <div class="text-right"><span class="text-red-400 font-mono">$-281.85</span><span class="text-xs text-gray-500 ml-1">(-1.4%)</span></div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                            <div class="flex items-center gap-2"><span>🟢</span><span class="font-medium">BTCUSDT</span><span class="text-gray-400 text-xs">SHORT</span></div>
+                            <div class="text-right"><span class="text-emerald-400 font-mono">$+742.37</span><span class="text-xs text-gray-500 ml-1">(+2.3%)</span></div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                            <div class="flex items-center gap-2"><span>🟢</span><span class="font-medium">BTCUSDT</span><span class="text-gray-400 text-xs">SHORT</span></div>
+                            <div class="text-right"><span class="text-emerald-400 font-mono">$+713.81</span><span class="text-xs text-gray-500 ml-1">(+2.3%)</span></div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center text-xs text-gray-500">Total: 27 trades | 20 wins | 7 losses</div>
                 </div>
-                <div class="text-2xl font-bold">9</div>
-                <div class="text-sm text-gray-400">Konkurrenter</div>
-                <div class="text-xs text-gray-500 mt-1">Analyse mandag 09:00</div>
-            </div>
-
-            <!-- Alerts -->
-            <div class="glass rounded-xl p-4">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-gray-400"><i class="fas fa-bell mr-2"></i>Alerts</span>
-                    <span class="status-dot status-up"></span>
+                <div class="glass rounded-2xl p-5">
+                    <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-bolt text-amber-400"></i>Hurtige Handlinger</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <a href="http://localhost:5678" target="_blank" class="action-btn p-4 text-center">
+                            <i class="fas fa-project-diagram text-2xl mb-2 text-blue-400"></i>
+                            <div class="text-sm font-medium">n8n Workflows</div>
+                        </a>
+                        <button onclick="switchTab('competitors')" class="action-btn p-4 text-center">
+                            <i class="fas fa-search text-2xl mb-2 text-purple-400"></i>
+                            <div class="text-sm font-medium">Tjek Konkurrenter</div>
+                        </button>
+                        <button onclick="switchTab('websites')" class="action-btn p-4 text-center">
+                            <i class="fas fa-heartbeat text-2xl mb-2 text-emerald-400"></i>
+                            <div class="text-sm font-medium">Site Status</div>
+                        </button>
+                        <a href="https://app.netlify.com" target="_blank" class="action-btn p-4 text-center">
+                            <i class="fas fa-cloud text-2xl mb-2 text-orange-400"></i>
+                            <div class="text-sm font-medium">Netlify</div>
+                        </a>
+                    </div>
                 </div>
-                <div class="text-2xl font-bold text-green-400">0</div>
-                <div class="text-sm text-gray-400">Aktive alarmer</div>
-                <div class="text-xs text-gray-500 mt-1">Alt OK</div>
             </div>
         </div>
 
-        <!-- Websites Status -->
-        <div class="glass rounded-xl p-4">
-            <h2 class="text-lg font-bold mb-4"><i class="fas fa-server mr-2"></i>Website Status</h2>
+        <!-- ==================== TRADING TAB ==================== -->
+        <div id="tab-trading" class="tab-content space-y-6">
+            <!-- Trading Stats Row -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-gray-400 text-sm mb-1">Total Return</div>
+                    <div class="text-3xl font-bold text-emerald-400">+90.2%</div>
+                    <div class="text-xs text-gray-500 mt-1">$10K → $19K</div>
+                </div>
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-gray-400 text-sm mb-1">Win Rate</div>
+                    <div class="text-3xl font-bold">74.1%</div>
+                    <div class="text-xs text-gray-500 mt-1">20 wins / 7 losses</div>
+                </div>
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-gray-400 text-sm mb-1">Total Trades</div>
+                    <div class="text-3xl font-bold">27</div>
+                    <div class="text-xs text-gray-500 mt-1">3 dages periode</div>
+                </div>
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-gray-400 text-sm mb-1">Status</div>
+                    <div class="text-3xl font-bold text-emerald-400">Running</div>
+                    <div class="text-xs text-gray-500 mt-1">Screen: tradingbot</div>
+                </div>
+            </div>
+
+            <!-- Performance Chart -->
+            <div class="glass rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold flex items-center gap-2"><i class="fas fa-chart-line text-indigo-400"></i>Performance Over Tid</h3>
+                    <span class="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-sm">Paper Trading</span>
+                </div>
+                <div style="height: 350px;"><canvas id="mainChart"></canvas></div>
+            </div>
+
+            <!-- Recent Trades Full -->
+            <div class="glass rounded-2xl p-5">
+                <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-list text-indigo-400"></i>Seneste 10 Handler</h3>
+                <div class="space-y-2" id="trading-trades">
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                        <div class="flex items-center gap-3">
+                            <span>🟢</span>
+                            <span class="font-medium">BTCUSDT</span>
+                            <span class="text-gray-400 text-xs bg-white/10 px-2 py-0.5 rounded">SHORT</span>
+                            <span class="text-gray-500 text-xs">TP hit</span>
+                        </div>
+                        <div class="text-right"><span class="text-emerald-400 font-mono font-semibold">$+760.79</span><span class="text-xs text-emerald-400 ml-1">(+2.3%)</span></div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                        <div class="flex items-center gap-3">
+                            <span>🔴</span>
+                            <span class="font-medium">PAXGUSDT</span>
+                            <span class="text-gray-400 text-xs bg-white/10 px-2 py-0.5 rounded">SHORT</span>
+                            <span class="text-gray-500 text-xs">SL hit</span>
+                        </div>
+                        <div class="text-right"><span class="text-red-400 font-mono font-semibold">$-380.39</span><span class="text-xs text-red-400 ml-1">(-2.9%)</span></div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                        <div class="flex items-center gap-3">
+                            <span>🔴</span>
+                            <span class="font-medium">PAXGUSDT</span>
+                            <span class="text-gray-400 text-xs bg-white/10 px-2 py-0.5 rounded">LONG</span>
+                            <span class="text-gray-500 text-xs">SL hit</span>
+                        </div>
+                        <div class="text-right"><span class="text-red-400 font-mono font-semibold">$-281.85</span><span class="text-xs text-red-400 ml-1">(-1.4%)</span></div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                        <div class="flex items-center gap-3">
+                            <span>🟢</span>
+                            <span class="font-medium">BTCUSDT</span>
+                            <span class="text-gray-400 text-xs bg-white/10 px-2 py-0.5 rounded">SHORT</span>
+                            <span class="text-gray-500 text-xs">TP hit</span>
+                        </div>
+                        <div class="text-right"><span class="text-emerald-400 font-mono font-semibold">$+742.37</span><span class="text-xs text-emerald-400 ml-1">(+2.3%)</span></div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                        <div class="flex items-center gap-3">
+                            <span>🟢</span>
+                            <span class="font-medium">BTCUSDT</span>
+                            <span class="text-gray-400 text-xs bg-white/10 px-2 py-0.5 rounded">SHORT</span>
+                            <span class="text-gray-500 text-xs">TP hit</span>
+                        </div>
+                        <div class="text-right"><span class="text-emerald-400 font-mono font-semibold">$+713.81</span><span class="text-xs text-emerald-400 ml-1">(+2.3%)</span></div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                        <div class="flex items-center gap-3">
+                            <span>🟢</span>
+                            <span class="font-medium">BTCUSDT</span>
+                            <span class="text-gray-400 text-xs bg-white/10 px-2 py-0.5 rounded">SHORT</span>
+                            <span class="text-gray-500 text-xs">TP hit</span>
+                        </div>
+                        <div class="text-right"><span class="text-emerald-400 font-mono font-semibold">$+686.36</span><span class="text-xs text-emerald-400 ml-1">(+2.3%)</span></div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                        <div class="flex items-center gap-3">
+                            <span>🟢</span>
+                            <span class="font-medium">BTCUSDT</span>
+                            <span class="text-gray-400 text-xs bg-white/10 px-2 py-0.5 rounded">SHORT</span>
+                            <span class="text-gray-500 text-xs">TP hit</span>
+                        </div>
+                        <div class="text-right"><span class="text-emerald-400 font-mono font-semibold">$+659.96</span><span class="text-xs text-emerald-400 ml-1">(+2.3%)</span></div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                        <div class="flex items-center gap-3">
+                            <span>🟢</span>
+                            <span class="font-medium">BTCUSDT</span>
+                            <span class="text-gray-400 text-xs bg-white/10 px-2 py-0.5 rounded">SHORT</span>
+                            <span class="text-gray-500 text-xs">TP hit</span>
+                        </div>
+                        <div class="text-right"><span class="text-emerald-400 font-mono font-semibold">$+634.58</span><span class="text-xs text-emerald-400 ml-1">(+2.3%)</span></div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                        <div class="flex items-center gap-3">
+                            <span>🟢</span>
+                            <span class="font-medium">BTCUSDT</span>
+                            <span class="text-gray-400 text-xs bg-white/10 px-2 py-0.5 rounded">SHORT</span>
+                            <span class="text-gray-500 text-xs">TP hit</span>
+                        </div>
+                        <div class="text-right"><span class="text-emerald-400 font-mono font-semibold">$+610.17</span><span class="text-xs text-emerald-400 ml-1">(+2.3%)</span></div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl text-sm trade-row">
+                        <div class="flex items-center gap-3">
+                            <span>🟢</span>
+                            <span class="font-medium">BTCUSDT</span>
+                            <span class="text-gray-400 text-xs bg-white/10 px-2 py-0.5 rounded">SHORT</span>
+                            <span class="text-gray-500 text-xs">TP hit</span>
+                        </div>
+                        <div class="text-right"><span class="text-emerald-400 font-mono font-semibold">$+586.70</span><span class="text-xs text-emerald-400 ml-1">(+2.3%)</span></div>
+                    </div>
+                </div>
+                <div class="mt-4 text-center text-sm text-gray-500">Viser seneste 10 handler ud af 27 total</div>
+            </div>
+        </div>
+
+        <!-- ==================== WEBSITES TAB ==================== -->
+        <div id="tab-websites" class="tab-content space-y-6">
+            <!-- Website Stats -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
-                    <div>
-                        <div class="font-semibold">🦒 MLflyt</div>
-                        <div class="text-xs text-gray-400">mlflyt.dk</div>
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-gray-400 text-sm mb-2">Totale Websites</div>
+                    <div class="text-4xl font-bold">3</div>
+                    <div class="text-xs text-gray-500 mt-2">2 aktive, 1 pending</div>
+                </div>
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-gray-400 text-sm mb-2">Oppe</div>
+                    <div class="text-4xl font-bold text-emerald-400">2</div>
+                    <div class="text-xs text-gray-500 mt-2">100% uptime</div>
+                </div>
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-gray-400 text-sm mb-2">Gennemsnitlig Load</div>
+                    <div class="text-4xl font-bold">0.31s</div>
+                    <div class="text-xs text-gray-500 mt-2">Excellent</div>
+                </div>
+            </div>
+
+            <!-- Website Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- MLflyt -->
+                <div class="website-card">
+                    <div class="h-32 bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center">
+                        <span class="text-6xl">🦒</span>
                     </div>
-                    <div class="text-right">
-                        <span class="status-dot status-up"></span>
-                        <div class="text-xs text-green-400">0.42s</div>
+                    <div class="p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-lg">MLflyt</h3>
+                            <span class="status-dot status-up"></span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">mlflyt.dk</p>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm"><span class="text-gray-400">Status</span><span class="text-emerald-400">Online</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-gray-400">Load tid</span><span class="font-mono">0.42s</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-gray-400">Seneste tjek</span><span class="text-gray-500">2 min siden</span></div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-white/10 flex gap-2">
+                            <a href="https://mlflyt.dk" target="_blank" class="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-lg py-2 text-center text-sm transition">Besøg site</a>
+                            <a href="https://app.netlify.com/sites/mlflyt" target="_blank" class="flex-1 bg-white/10 hover:bg-white/20 rounded-lg py-2 text-center text-sm transition">Netlify</a>
+                        </div>
                     </div>
                 </div>
-                <div class="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
-                    <div>
-                        <div class="font-semibold">♻️ AK Affaldsservice</div>
-                        <div class="text-xs text-gray-400">akaffaldsservice.dk</div>
+
+                <!-- AK Affald -->
+                <div class="website-card">
+                    <div class="h-32 bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center">
+                        <span class="text-6xl">♻️</span>
                     </div>
-                    <div class="text-right">
-                        <span class="status-dot status-up"></span>
-                        <div class="text-xs text-green-400">0.19s</div>
+                    <div class="p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-lg">AK Affaldsservice</h3>
+                            <span class="status-dot status-up"></span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">akaffaldsservice.dk</p>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm"><span class="text-gray-400">Status</span><span class="text-emerald-400">Online</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-gray-400">Load tid</span><span class="font-mono">0.19s</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-gray-400">Seneste tjek</span><span class="text-gray-500">2 min siden</span></div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-white/10 flex gap-2">
+                            <a href="https://akaffaldsservice.dk" target="_blank" class="flex-1 bg-emerald-600 hover:bg-emerald-700 rounded-lg py-2 text-center text-sm transition">Besøg site</a>
+                            <a href="https://app.netlify.com/sites/akaffaldsservice" target="_blank" class="flex-1 bg-white/10 hover:bg-white/20 rounded-lg py-2 text-center text-sm transition">Netlify</a>
+                        </div>
                     </div>
                 </div>
-                <div class="bg-gray-800 rounded-lg p-3 flex items-center justify-between opacity-50">
-                    <div>
-                        <div class="font-semibold">🌿 Sacred Shop</div>
-                        <div class="text-xs text-gray-400">sacred-shop.com (pending)</div>
+
+                <!-- Sacred Shop -->
+                <div class="website-card opacity-70">
+                    <div class="h-32 bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
+                        <span class="text-6xl">🌿</span>
                     </div>
-                    <div class="text-right">
-                        <span class="status-dot status-warn"></span>
-                        <div class="text-xs text-yellow-400">Venter på DK</div>
+                    <div class="p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-lg">Sacred Shop</h3>
+                            <span class="status-dot status-warn"></span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">sacred-shop.com</p>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm"><span class="text-gray-400">Status</span><span class="text-amber-400">Pending</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-gray-400">Load tid</span><span class="font-mono">--</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-gray-400">Note</span><span class="text-gray-500">Venter på DK</span></div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-white/10">
+                            <div class="bg-amber-500/10 text-amber-400 rounded-lg py-2 text-center text-sm">Kommer snart</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monitoring Schedule -->
+            <div class="glass rounded-2xl p-5">
+                <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-clock text-indigo-400"></i>Overvågnings Schedule</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-white/5 rounded-xl">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="fas fa-heartbeat text-emerald-400"></i>
+                            <span class="font-medium">Landing Page Monitor</span>
+                        </div>
+                        <p class="text-sm text-gray-400">Tjekker MLflyt + AK Affald hver 2. time</p>
+                        <div class="mt-2 text-xs text-gray-500">Næste tjek: <span class="text-gray-300">17:00</span></div>
+                    </div>
+                    <div class="p-4 bg-white/5 rounded-xl">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="fas fa-sync-alt text-blue-400"></i>
+                            <span class="font-medium">Auto Opdatering</span>
+                        </div>
+                        <p class="text-sm text-gray-400">Dashboard opdateres hver 5. minut</p>
+                        <div class="mt-2 text-xs text-gray-500">Sidst: <span class="text-gray-300">16:00</span></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Trading Bot -->
-        <div class="glass rounded-xl p-4">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-bold"><i class="fas fa-chart-line mr-2"></i>Trading Bot Performance</h2>
-                <span class="bg-green-900 text-green-400 px-2 py-1 rounded text-xs">Paper Trading</span>
-            </div>
+        <!-- ==================== COMPETITORS TAB ==================== -->
+        <div id="tab-competitors" class="tab-content space-y-6">
+            <!-- Competitor Stats -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-gray-800 rounded-lg p-3">
-                    <div class="text-gray-400 text-sm">Total Return</div>
-                    <div class="text-2xl font-bold text-green-400">+90.2%</div>
-                    <div class="text-xs text-gray-500">$10K → $19K</div>
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-gray-400 text-sm mb-1">Konkurrenter</div>
+                    <div class="text-3xl font-bold">9</div>
+                    <div class="text-xs text-gray-500 mt-1">Total tracket</div>
                 </div>
-                <div class="bg-gray-800 rounded-lg p-3">
-                    <div class="text-gray-400 text-sm">Win Rate</div>
-                    <div class="text-2xl font-bold">71%</div>
-                    <div class="text-xs text-gray-500">22 wins / 9 losses</div>
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-gray-400 text-sm mb-1">Høj Prioritet</div>
+                    <div class="text-3xl font-bold text-red-400">4</div>
+                    <div class="text-xs text-gray-500 mt-1">Kræver opmærksomhed</div>
                 </div>
-                <div class="bg-gray-800 rounded-lg p-3">
-                    <div class="text-gray-400 text-sm">Total Trades</div>
-                    <div class="text-2xl font-bold">31</div>
-                    <div class="text-xs text-gray-500">3 dages periode</div>
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-gray-400 text-sm mb-1">Medium</div>
+                    <div class="text-3xl font-bold text-amber-400">3</div>
+                    <div class="text-xs text-gray-500 mt-1">Standard overvågning</div>
                 </div>
-                <div class="bg-gray-800 rounded-lg p-3">
-                    <div class="text-gray-400 text-sm">Status</div>
-                    <div class="text-2xl font-bold text-green-400">Running</div>
-                    <div class="text-xs text-gray-500">Screen: tradingbot</div>
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-gray-400 text-sm mb-1">Næste Analyse</div>
+                    <div class="text-xl font-bold font-mono" id="competitor-countdown">--:--:--</div>
+                    <div class="text-xs text-gray-500 mt-1">Mandag 09:00</div>
                 </div>
             </div>
-        </div>
 
-        <!-- Competitors -->
-        <div class="glass rounded-xl p-4">
-            <h2 class="text-lg font-bold mb-4"><i class="fas fa-users mr-2"></i>Konkurrent Overvågning</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <h3 class="text-sm font-semibold text-gray-400 mb-2">🦒 MLflyt Konkurrenter</h3>
+            <!-- Competitor Lists -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- MLflyt Competitors -->
+                <div class="glass rounded-2xl p-5">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-2xl">🦒</span>
+                        <h3 class="font-semibold">MLflyt Konkurrenter</h3>
+                        <span class="ml-auto text-xs text-gray-400">5 tracket</span>
+                    </div>
                     <div class="space-y-2">
-                        <div class="bg-gray-800 rounded p-2 flex justify-between items-center">
-                            <span>Holger Danske</span>
-                            <span class="text-xs bg-blue-900 text-blue-400 px-2 py-1 rounded">Høj prioritet</span>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-building text-gray-400"></i>
+                                <span>Holger Danske</span>
+                            </div>
+                            <span class="text-xs priority-high px-2 py-1 rounded">Høj prioritet</span>
                         </div>
-                        <div class="bg-gray-800 rounded p-2 flex justify-between items-center">
-                            <span>Aarhus Flytteservice</span>
-                            <span class="text-xs bg-blue-900 text-blue-400 px-2 py-1 rounded">Høj prioritet</span>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-building text-gray-400"></i>
+                                <span>Aarhus Flytteservice</span>
+                            </div>
+                            <span class="text-xs priority-high px-2 py-1 rounded">Høj prioritet</span>
                         </div>
-                        <div class="bg-gray-800 rounded p-2 flex justify-between items-center">
-                            <span>AKL Flyt</span>
-                            <span class="text-xs bg-gray-700 text-gray-400 px-2 py-1 rounded">Medium</span>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-building text-gray-400"></i>
+                                <span>AKL Flyt</span>
+                            </div>
+                            <span class="text-xs priority-medium px-2 py-1 rounded">Medium</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-building text-gray-400"></i>
+                                <span>Flyttefirmaet Danmark</span>
+                            </div>
+                            <span class="text-xs priority-medium px-2 py-1 rounded">Medium</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-building text-gray-400"></i>
+                                <span>Sydjysk Flytning</span>
+                            </div>
+                            <span class="text-xs priority-low px-2 py-1 rounded">Low</span>
                         </div>
                     </div>
                 </div>
-                <div>
-                    <h3 class="text-sm font-semibold text-gray-400 mb-2">♻️ AK Affald Konkurrenter</h3>
+
+                <!-- AK Affald Competitors -->
+                <div class="glass rounded-2xl p-5">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-2xl">♻️</span>
+                        <h3 class="font-semibold">AK Affald Konkurrenter</h3>
+                        <span class="ml-auto text-xs text-gray-400">4 tracket</span>
+                    </div>
                     <div class="space-y-2">
-                        <div class="bg-gray-800 rounded p-2 flex justify-between items-center">
-                            <span>Junkbusters</span>
-                            <span class="text-xs bg-blue-900 text-blue-400 px-2 py-1 rounded">Høj prioritet</span>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-truck text-gray-400"></i>
+                                <span>Junkbusters</span>
+                            </div>
+                            <span class="text-xs priority-high px-2 py-1 rounded">Høj prioritet</span>
                         </div>
-                        <div class="bg-gray-800 rounded p-2 flex justify-between items-center">
-                            <span>Skraldebilen</span>
-                            <span class="text-xs bg-blue-900 text-blue-400 px-2 py-1 rounded">Høj prioritet</span>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-truck text-gray-400"></i>
+                                <span>Skraldebilen</span>
+                            </div>
+                            <span class="text-xs priority-high px-2 py-1 rounded">Høj prioritet</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-truck text-gray-400"></i>
+                                <span>Rydning.dk</span>
+                            </div>
+                            <span class="text-xs priority-medium px-2 py-1 rounded">Medium</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-truck text-gray-400"></i>
+                                <span>Grøn Affald</span>
+                            </div>
+                            <span class="text-xs priority-low px-2 py-1 rounded">Low</span>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="mt-4 text-center text-sm text-gray-400">
-                Næste analyse: <span class="text-white">Mandag 09:00</span>
+
+            <!-- Analysis Schedule -->
+            <div class="glass rounded-2xl p-5">
+                <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-calendar-alt text-indigo-400"></i>Analyse Schedule</h3>
+                <div class="p-4 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border border-indigo-500/30 rounded-xl">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="font-medium mb-1">Næste konkurrent analyse</div>
+                            <div class="text-sm text-gray-400">Komplet gennemgang af alle 9 konkurrenter</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold font-mono" id="schedule-countdown">--:--:--</div>
+                            <div class="text-xs text-gray-500">Mandag 09:00</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="glass rounded-xl p-4">
-            <h2 class="text-lg font-bold mb-4"><i class="fas fa-bolt mr-2"></i>Hurtige Handlinger</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <a href="http://localhost:5678" target="_blank" class="bg-blue-600 hover:bg-blue-700 rounded-lg p-3 text-center transition">
-                    <i class="fas fa-project-diagram text-2xl mb-2"></i>
-                    <div class="text-sm">n8n Workflows</div>
-                </a>
-                <button onclick="alert('Skriv tjek konkurrenter i chat for at køre nu')" class="bg-purple-600 hover:bg-purple-700 rounded-lg p-3 text-center transition">
-                    <i class="fas fa-search text-2xl mb-2"></i>
-                    <div class="text-sm">Tjek Konkurrenter</div>
-                </button>
-                <button onclick="alert('Landing page tjek kører automatisk hver 2. time')" class="bg-green-600 hover:bg-green-700 rounded-lg p-3 text-center transition">
-                    <i class="fas fa-heartbeat text-2xl mb-2"></i>
-                    <div class="text-sm">Site Status</div>
-                </button>
-                <a href="https://app.netlify.com" target="_blank" class="bg-orange-600 hover:bg-orange-700 rounded-lg p-3 text-center transition">
-                    <i class="fas fa-cloud text-2xl mb-2"></i>
-                    <div class="text-sm">Netlify</div>
-                </a>
+        <!-- ==================== ACTIVITY TAB ==================== -->
+        <div id="tab-activity" class="tab-content space-y-6">
+            <div class="glass rounded-2xl p-5">
+                <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-history text-indigo-400"></i>Seneste Aktivitet</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                        <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                            <i class="fas fa-check text-emerald-400"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium">Landing page monitor aktiveret</div>
+                            <div class="text-sm text-gray-400">MLflyt + AK Affald overvåges nu hver 2. time</div>
+                        </div>
+                        <div class="text-xs text-gray-500">13:00</div>
+                    </div>
+                    <div class="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                        <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                            <i class="fas fa-eye text-blue-400"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium">Konkurrent overvågning sat op</div>
+                            <div class="text-sm text-gray-400">9 konkurrenter tilføjet til tracking</div>
+                        </div>
+                        <div class="text-xs text-gray-500">13:11</div>
+                    </div>
+                    <div class="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                        <div class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+                            <i class="fas fa-chart-bar text-purple-400"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium">Konkurrent analyse gennemført</div>
+                            <div class="text-sm text-gray-400">Begge sider ser gode ud ift. konkurrenter</div>
+                        </div>
+                        <div class="text-xs text-gray-500">13:14</div>
+                    </div>
+                    <div class="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                        <div class="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                            <i class="fas fa-robot text-amber-400"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium">Trading bot opdatering</div>
+                            <div class="text-sm text-gray-400">+90.2% total return, 74.1% win rate</div>
+                        </div>
+                        <div class="text-xs text-gray-500">Running</div>
+                    </div>
+                    <div class="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                        <div class="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                            <i class="fas fa-sync-alt text-indigo-400"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium">Dashboard auto-opdatering</div>
+                            <div class="text-sm text-gray-400">Ny design implementeret med tabs</div>
+                        </div>
+                        <div class="text-xs text-gray-500">16:13</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Recent Activity -->
-        <div class="glass rounded-xl p-4">
-            <h2 class="text-lg font-bold mb-4"><i class="fas fa-history mr-2"></i>Seneste Aktivitet</h2>
-            <div class="space-y-2 text-sm">
-                <div class="flex items-center gap-3 p-2 bg-gray-800 rounded">
-                    <span class="text-green-400">✓</span>
-                    <span>Landing page monitor aktiveret for MLflyt + AK Affald</span>
-                    <span class="text-gray-500 ml-auto">13:00</span>
-                </div>
-                <div class="flex items-center gap-3 p-2 bg-gray-800 rounded">
-                    <span class="text-green-400">✓</span>
-                    <span>Konkurrent overvågning sat op (9 konkurrenter)</span>
-                    <span class="text-gray-500 ml-auto">13:11</span>
-                </div>
-                <div class="flex items-center gap-3 p-2 bg-gray-800 rounded">
-                    <span class="text-green-400">✓</span>
-                    <span>Konkurrent analyse kørt – begge sider ser gode ud</span>
-                    <span class="text-gray-500 ml-auto">13:14</span>
-                </div>
-                <div class="flex items-center gap-3 p-2 bg-gray-800 rounded">
-                    <span class="text-blue-400">🤖</span>
-                    <span>Trading bot: +90.2% (71% win rate)</span>
-                    <span class="text-gray-500 ml-auto">Running</span>
+        <!-- ==================== TOOLS TAB ==================== -->
+        <div id="tab-tools" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <a href="http://localhost:5678" target="_blank" class="action-btn p-6 text-center group">
+                    <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition">
+                        <i class="fas fa-project-diagram text-2xl text-blue-400"></i>
+                    </div>
+                    <div class="font-medium">n8n Workflows</div>
+                    <div class="text-xs text-gray-400 mt-1">Automation platform</div>
+                </a>
+                <a href="https://app.netlify.com" target="_blank" class="action-btn p-6 text-center group">
+                    <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-orange-500/20 flex items-center justify-center group-hover:scale-110 transition">
+                        <i class="fas fa-cloud text-2xl text-orange-400"></i>
+                    </div>
+                    <div class="font-medium">Netlify</div>
+                    <div class="text-xs text-gray-400 mt-1">Hosting dashboard</div>
+                </a>
+                <a href="https://github.com" target="_blank" class="action-btn p-6 text-center group">
+                    <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gray-500/20 flex items-center justify-center group-hover:scale-110 transition">
+                        <i class="fab fa-github text-2xl text-gray-400"></i>
+                    </div>
+                    <div class="font-medium">GitHub</div>
+                    <div class="text-xs text-gray-400 mt-1">Kode repository</div>
+                </a>
+                <button onclick="location.reload()" class="action-btn p-6 text-center group">
+                    <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition">
+                        <i class="fas fa-sync-alt text-2xl text-emerald-400"></i>
+                    </div>
+                    <div class="font-medium">Opdater Dashboard</div>
+                    <div class="text-xs text-gray-400 mt-1">Hent seneste data</div>
+                </button>
+            </div>
+
+            <div class="glass rounded-2xl p-5">
+                <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-terminal text-indigo-400"></i>Hurtige Kommandoer</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-white/5 rounded-xl">
+                        <div class="font-medium mb-2">Chat kommandoer</div>
+                        <div class="text-sm text-gray-400 space-y-1">
+                            <p><code class="bg-white/10 px-2 py-0.5 rounded">tjek konkurrenter</code> – Kør analyse nu</p>
+                            <p><code class="bg-white/10 px-2 py-0.5 rounded">status</code> – System status</p>
+                            <p><code class="bg-white/10 px-2 py-0.5 rounded">trading</code> – Trading oversigt</p>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-white/5 rounded-xl">
+                        <div class="font-medium mb-2">System info</div>
+                        <div class="text-sm text-gray-400 space-y-1">
+                            <p>Dashboard: Auto-opdatering hver 5. min</p>
+                            <p>Websites: Tjek hver 2. time</p>
+                            <p>Konkurrenter: Analyse mandag 09:00</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -251,10 +820,112 @@
         // Clock
         function updateClock() {
             const now = new Date();
-            document.getElementById('clock').textContent = now.toLocaleTimeString('da-DK');
+            document.getElementById('clock').textContent = now.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('date').textContent = now.toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' });
         }
         setInterval(updateClock, 1000);
         updateClock();
+
+        // Tab Switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.closest('.tab-btn').classList.add('active');
+        }
+
+        // Countdown to Monday 09:00
+        function updateCountdowns() {
+            const now = new Date();
+            const nextMonday = new Date();
+            nextMonday.setDate(now.getDate() + ((1 + 7 - now.getDay()) % 7 || 7));
+            nextMonday.setHours(9, 0, 0, 0);
+            
+            const diff = nextMonday - now;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            const timeStr = `${days}d ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            const cd1 = document.getElementById('dashboard-countdown');
+            const cd2 = document.getElementById('competitor-countdown');
+            const cd3 = document.getElementById('schedule-countdown');
+            
+            if (cd1) cd1.textContent = timeStr;
+            if (cd2) cd2.textContent = timeStr;
+            if (cd3) cd3.textContent = timeStr;
+        }
+        setInterval(updateCountdowns, 1000);
+        updateCountdowns();
+
+        // Charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mini Chart
+            const miniCtx = document.getElementById('miniChart');
+            if (miniCtx) {
+                new Chart(miniCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Dag 1', 'Dag 2', 'Dag 3'],
+                        datasets: [{
+                            label: 'Portfolio Value',
+                            data: [10000, 14000, 19019],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#6366f1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+
+            // Main Chart
+            const mainCtx = document.getElementById('mainChart');
+            if (mainCtx) {
+                new Chart(mainCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Start', 'Dag 1', 'Dag 2', 'Dag 3'],
+                        datasets: [{
+                            label: 'Portfolio Value ($)',
+                            data: [10000, 12000, 14000, 19019],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#10b981'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: '#94a3b8' } }
+                        },
+                        scales: {
+                            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+        });
 
         // Auto-refresh every 5 minutes
         setInterval(() => {
